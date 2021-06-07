@@ -32,7 +32,7 @@ public class MultiThreadedEventBusTests {
 
         mteb.publishEvent(new Person("ALLAN", 21, "London"));
 
-        verify(threadPoolMock, times(2)).submit((Runnable) any());
+        verify(threadPoolMock, times(2)).execute((Runnable) any());
     }
 
     /**
@@ -40,7 +40,8 @@ public class MultiThreadedEventBusTests {
      */
     @Test
     public void testMTCallback() throws Exception {
-        MultiThreadedEventBus mteb = new MultiThreadedEventBus(Executors.newFixedThreadPool(3));
+        ExecutorService threadPool = Executors.newFixedThreadPool(3);
+        MultiThreadedEventBus mteb = new MultiThreadedEventBus(threadPool);
 
         AtomicInteger ai = new AtomicInteger(0);
         mteb.addSubscriber(Person.class, p -> ai.incrementAndGet());
@@ -52,19 +53,6 @@ public class MultiThreadedEventBusTests {
         Thread.sleep(10);
         assertEquals("Wrong number of events", 2, ai.get());
 
-        mteb.close();
-    }
-
-    /**
-     * Confirm that the thread pool is shutdown after the bus is closed.
-     */
-    @Test
-    public void testShutdown() {
-        try (MultiThreadedEventBus mteb = new MultiThreadedEventBus(threadPoolMock)) {
-            mteb.addSubscriber(Person.class, e -> {});
-            mteb.publishEvent(new Person("ALLAN", 21, "London"));
-        }
-
-        verify(threadPoolMock, times(1)).shutdown();
+        threadPool.shutdown();
     }
 }
