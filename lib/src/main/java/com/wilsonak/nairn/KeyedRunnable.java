@@ -1,5 +1,10 @@
-package com.wilsonak.nairn.hashpool;
+package com.wilsonak.nairn;
 
+import com.wilsonak.nairn.hashpool.HashPoolExecutorService;
+
+/**
+ * An identifiable {@code Runnable}. Identity used to select a thread pool by {@link HashPoolExecutorService}.
+ */
 public class KeyedRunnable implements Runnable {
     private final String id;
     private final Runnable runnable;

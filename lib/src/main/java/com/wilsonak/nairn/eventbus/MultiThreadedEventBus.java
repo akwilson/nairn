@@ -1,6 +1,6 @@
 package com.wilsonak.nairn.eventbus;
 
-import com.wilsonak.nairn.hashpool.KeyedRunnable;
+import com.wilsonak.nairn.KeyedRunnable;
 
 import java.util.Collection;
 import java.util.Map;
