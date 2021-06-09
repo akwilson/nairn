@@ -16,20 +16,44 @@ import java.util.function.Predicate;
 public class MultiThreadedEventBus implements EventBus {
     private final Map<Class<? extends Event>, Collection<FilteredCallback<? extends Event>>> events = new ConcurrentHashMap<>();
     private final Executor threadPool;
+    private final Consumer<Throwable> unhandledExceptionCallback;
 
-    public MultiThreadedEventBus(Executor threadPool) {
+    /**
+     * Initialises a new instance of the {@code MultiThreadedEventBus} class
+     *
+     * @param threadPool                 used to execute subscriber methods
+     * @param unhandledExceptionCallback called with unhandled exceptions from the subscribers
+     */
+    public MultiThreadedEventBus(Executor threadPool, Consumer<Throwable> unhandledExceptionCallback) {
         this.threadPool = threadPool;
+        this.unhandledExceptionCallback = unhandledExceptionCallback;
     }
 
-    private static <T extends Event> void execute(FilteredCallback<T> fc, T event) {
-        if (fc.getFilter() == null || fc.getFilter().test(event)) {
-            fc.getConsumer().accept(event);
+    /**
+     * Initialises a new instance of the {@code MultiThreadedEventBus} class
+     * without the optional exception handler
+     *
+     * @param threadPool used to execute subscriber methods
+     */
+    public MultiThreadedEventBus(Executor threadPool) {
+        this(threadPool, null);
+    }
+
+    private <T extends Event> void execute(FilteredCallback<T> fc, T event) {
+        try {
+            if (fc.getFilter() == null || fc.getFilter().test(event)) {
+                fc.getConsumer().accept(event);
+            }
+        } catch (Throwable e) {
+            if (unhandledExceptionCallback != null) {
+                unhandledExceptionCallback.accept(e);
+            }
         }
     }
 
     private <T extends Event> void doPublish(Class<T> clazz, Event event) {
         @SuppressWarnings("unchecked")
-        Iterable<FilteredCallback<T>> subscribers = (Iterable<FilteredCallback<T>>) (Iterable<?>) events.get(clazz);
+        var subscribers = (Iterable<FilteredCallback<T>>)(Iterable<?>)events.get(clazz);
         if (subscribers != null) {
             subscribers.forEach(s -> threadPool.execute(new KeyedRunnable(event.getId(), () -> execute(s, clazz.cast(event)))));
         }
@@ -42,13 +66,13 @@ public class MultiThreadedEventBus implements EventBus {
 
     @Override
     public <T extends Event> void addSubscriber(Class<T> clazz, Consumer<T> consumer) {
-        Collection<FilteredCallback<? extends Event>> consumers = events.computeIfAbsent(clazz, k -> new CopyOnWriteArrayList<>());
+        var consumers = events.computeIfAbsent(clazz, k -> new CopyOnWriteArrayList<>());
         consumers.add(new FilteredCallback<>(consumer, null));
     }
 
     @Override
     public <T extends Event> void addSubscriberForFilteredEvents(Class<T> clazz, Consumer<T> consumer, Predicate<T> filter) {
-        Collection<FilteredCallback<? extends Event>> consumers = events.computeIfAbsent(clazz, k -> new CopyOnWriteArrayList<>());
+        var consumers = events.computeIfAbsent(clazz, k -> new CopyOnWriteArrayList<>());
         consumers.add(new FilteredCallback<>(consumer, filter));
     }
 }

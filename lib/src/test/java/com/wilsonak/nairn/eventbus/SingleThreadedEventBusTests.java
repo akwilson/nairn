@@ -68,6 +68,19 @@ public class SingleThreadedEventBusTests {
         assertEquals("Wrong event", "GANDALF", results.get(1).getName());
     }
 
+    @Test
+    public void testErrorCallback() {
+        List<Throwable> errs = new ArrayList<>();
+        EventBus steb = new SingleThreadedEventBus(errs::add);
+
+        steb.addSubscriber(Person.class, p -> {
+            throw new IllegalArgumentException("ERROR");
+        });
+
+        steb.publishEvent(new Person("ALLAN", 21, "London"));
+        assertEquals("Exception not found", 1, errs.size());
+    }
+
     private static class StringWrapper implements Event {
         private final String str;
 
