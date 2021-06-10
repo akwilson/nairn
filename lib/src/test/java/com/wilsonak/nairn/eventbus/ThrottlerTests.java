@@ -37,7 +37,7 @@ public class ThrottlerTests {
      */
     @Test
     public void testThrottledEventBus() throws Exception {
-        EventBus eb = new SingleThreadedEventBus();
+        EventBus eb = EventBus.newSingleThreadedEventBus();
         AtomicInteger ai = new AtomicInteger(0);
         Consumer<Person> callback = new ThrottledCallback<>(new ThrottlerImpl(100), p -> ai.incrementAndGet());
         eb.addSubscriber(Person.class, callback);

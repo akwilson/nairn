@@ -14,7 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for the {@link MultiThreadedEventBus} class
+ * Unit tests for the multi threaded {@link EventBus}
  */
 @RunWith(MockitoJUnitRunner.class)
 public class MultiThreadedEventBusTests {
@@ -25,7 +25,7 @@ public class MultiThreadedEventBusTests {
      */
     @Test
     public void testCallback() {
-        EventBus mteb = new MultiThreadedEventBus(threadPoolMock);
+        EventBus mteb = EventBus.newMultiThreadedEventBus(threadPoolMock);
 
         mteb.addSubscriber(Person.class, e -> {});
         mteb.addSubscriber(Person.class, e -> {});
@@ -41,7 +41,7 @@ public class MultiThreadedEventBusTests {
     @Test
     public void testMTCallback() throws Exception {
         ExecutorService threadPool = Executors.newFixedThreadPool(3);
-        MultiThreadedEventBus mteb = new MultiThreadedEventBus(threadPool);
+        EventBus mteb = EventBus.newMultiThreadedEventBus(threadPool);
 
         AtomicInteger ai = new AtomicInteger(0);
         mteb.addSubscriber(Person.class, p -> ai.incrementAndGet());

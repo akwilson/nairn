@@ -8,7 +8,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Unit tests for the {@link SingleThreadedEventBus} class
+ * Unit tests for the single threaded {@link EventBus}
  */
 public class SingleThreadedEventBusTests {
     /**
@@ -16,7 +16,7 @@ public class SingleThreadedEventBusTests {
      */
     @Test
     public void testCallback() {
-        EventBus steb = new SingleThreadedEventBus();
+        EventBus steb = EventBus.newSingleThreadedEventBus();
 
         List<Person> results = new ArrayList<>();
         steb.addSubscriber(Person.class, results::add);
@@ -34,7 +34,7 @@ public class SingleThreadedEventBusTests {
      */
     @Test
     public void testSingleCallback() {
-        EventBus steb = new SingleThreadedEventBus();
+        EventBus steb = EventBus.newSingleThreadedEventBus();
 
         List<Person> pResults = new ArrayList<>();
         List<StringWrapper> strResults = new ArrayList<>();
@@ -53,7 +53,7 @@ public class SingleThreadedEventBusTests {
      */
     @Test
     public void testFilterCallback() {
-        EventBus steb = new SingleThreadedEventBus();
+        EventBus steb = EventBus.newSingleThreadedEventBus();
 
         List<Person> results = new ArrayList<>();
         steb.addSubscriberForFilteredEvents(Person.class, results::add, p -> p.getAge() > 20);
@@ -71,7 +71,7 @@ public class SingleThreadedEventBusTests {
     @Test
     public void testErrorCallback() {
         List<Throwable> errs = new ArrayList<>();
-        EventBus steb = new SingleThreadedEventBus(errs::add);
+        EventBus steb = EventBus.newSingleThreadedEventBus(errs::add);
 
         steb.addSubscriber(Person.class, p -> {
             throw new IllegalArgumentException("ERROR");

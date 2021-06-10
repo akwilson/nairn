@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 /**
  * Implementation of {@link ExecutorService} with a number of thread pools. Pools are selected
  * by hashing an identifier on a {@link KeyedRunnable} passed to the {@link #execute(Runnable)}
- * method. In other words, all {@code KeyedRunnable}s with the same identifer are executed on the
+ * method. In other words, all {@code KeyedRunnable}s with the same identifier are executed on the
  * same thread in the order they are presented to the {@code HashPoolExecutorService}. If the type
  * of the parameter to {@code execute} is not {@code KeyedRunnable} then requests use the first
  * thread pool.

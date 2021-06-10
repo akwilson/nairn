@@ -1,5 +1,6 @@
 package com.wilsonak.nairn.eventbus;
 
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -32,4 +33,40 @@ public interface EventBus {
      * @param <T>      the type of event to subscribe to
      */
     <T extends Event> void addSubscriberForFilteredEvents(Class<T> clazz, Consumer<T> consumer, Predicate<T> filter);
+
+    /**
+     * Initialises a new single threaded {@code EventBus} instance. All subscribers are
+     * processed on the same thread that the event is published on.
+     */
+    static EventBus newSingleThreadedEventBus() {
+        return new EventBusImpl(new LocalThreadExecutor(), null);
+    }
+
+    /**
+     * Initialises a new single threaded {@code EventBus} instance. All subscribers are
+     * processed on the same thread that the event is published on.
+     *
+     * @param unhandledExceptionCallback called with unhandled exceptions from the subscribers
+     */
+    static EventBus newSingleThreadedEventBus(Consumer<Throwable> unhandledExceptionCallback) {
+        return new EventBusImpl(new LocalThreadExecutor(), unhandledExceptionCallback);
+    }
+
+    /**
+     * Initialises a new multi threaded {@code EventBus} instance. Subscribers are executed
+     * on threads in a thread pool.
+     */
+    static EventBus newMultiThreadedEventBus(Executor executor) {
+        return new EventBusImpl(executor, null);
+    }
+
+    /**
+     * Initialises a new multi threaded {@code EventBus} instance. Subscribers are executed
+     * on threads in a thread pool.
+     *
+     * @param unhandledExceptionCallback called with unhandled exceptions from the subscribers
+     */
+    static EventBus newMultiThreadedEventBus(Executor executor, Consumer<Throwable> unhandledExceptionCallback) {
+        return new EventBusImpl(executor, unhandledExceptionCallback);
+    }
 }
