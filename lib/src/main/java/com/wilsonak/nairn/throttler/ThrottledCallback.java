@@ -51,6 +51,13 @@ public class ThrottledCallback<T> implements Consumer<T> {
 
     @Override
     public void accept(T t) {
+        /*
+         * TODO:
+         * Store log of timestamps of calls to accept.
+         * When new call is made count number of calls within the last time period
+         * Delete everything else
+         * if num calls < desired number then add to queue, else execute
+         */
         synchronized (locker) {
             // While throttled, add the parameter to the queue
             if (running && throttler.shouldProceed() == Throttler.ThrottleResult.DO_NOT_PROCEED) {
