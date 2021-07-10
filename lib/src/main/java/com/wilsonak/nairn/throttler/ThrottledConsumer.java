@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
  * @param <T> type of the parameter to be consumed
  */
 public class ThrottledConsumer<T> implements Consumer<T> {
-    private final Object locker = new Object();
+    private final Object logLocker = new Object();
+    private final Object bufferLocker = new Object();
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(1);
     private final Queue<T> buffer;
     private final Consumer<T> consumer;
@@ -50,27 +51,73 @@ public class ThrottledConsumer<T> implements Consumer<T> {
      * @return true if the call rate is within the desired limit
      */
     private boolean checkThrottle() {
-        synchronized (locker) {
+        synchronized (logLocker) {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime periodAgo = now.minus(1, timeUnit);
 
             Set<LocalDateTime> newLog = log.stream()
                                            .filter(ldt -> ldt.isAfter(periodAgo))
                                            .collect(Collectors.toCollection(TreeSet::new));
-            newLog.add(now);
             log = newLog;
 
-            return newLog.size() <= maxInPeriod;
+            if (newLog.size() < maxInPeriod) {
+                log.add(now);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Determines the next item to be sent to the consumer.
+     * <p/>
+     * If something is already in the queue then prioritise that to ensure the order of
+     * items outgoing is the same as the order incoming.
+     *
+     * @param item      the next item incoming
+     * @param maybeSwap false to disable the prioritisation behaviour
+     */
+    private T getNextData(T item, boolean maybeSwap) {
+        synchronized (bufferLocker) {
+            if (maybeSwap && !buffer.isEmpty()) {
+                buffer.offer(item);
+                return buffer.poll();
+            }
+
+            return item;
+        }
+    }
+
+    /**
+     * Called by the scheduler to read the next item from the buffer. Don't bother
+     * prioritising queue items in this case.
+     */
+    private void readBuffer() {
+        T item;
+        synchronized (bufferLocker) {
+            item = buffer.poll();
+        }
+
+        if (item != null) {
+            doAccept(item, false);
+        }
+    }
+
+    private void doAccept(T t, boolean maybeSwap) {
+        if (checkThrottle()) {
+            consumer.accept(getNextData(t, maybeSwap));
+        } else {
+            synchronized (bufferLocker) {
+                buffer.offer(t);
+            }
+
+            scheduler.schedule(this::readBuffer, 1, TimeUnit.of(timeUnit));
         }
     }
 
     @Override
     public void accept(T t) {
-        if (checkThrottle()) {
-            consumer.accept(t);
-        } else {
-            buffer.offer(t);
-            scheduler.schedule(() -> accept(buffer.poll()), 1, TimeUnit.of(timeUnit));
-        }
+        doAccept(t, true);
     }
 }
