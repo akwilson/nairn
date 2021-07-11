@@ -1,19 +1,18 @@
 package com.wilsonak.nairn.throttler;
 
+import com.wilsonak.nairn.RingBuffer;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.Queue;
 
 /**
  * Checks the calling rate of the {@link #checkThrottle()} method.
  */
 class ThrottleChecker {
-    private final Object logLocker = new Object();
     private final int maxInPeriod;
     private final ChronoUnit timeUnit;
-    private Set<LocalDateTime> log;
+    private final Queue<LocalDateTime> log;
 
     /**
      * Initialises a new instance of the {@code ThrottleChecker} class
@@ -22,7 +21,7 @@ class ThrottleChecker {
      * @param timeUnit    time units to throttle by
      */
     public ThrottleChecker(int maxInPeriod, ChronoUnit timeUnit) {
-        this.log = new TreeSet<>();
+        this.log = new RingBuffer<>(maxInPeriod);
         this.maxInPeriod = maxInPeriod;
         this.timeUnit = timeUnit;
     }
@@ -42,21 +41,18 @@ class ThrottleChecker {
      * @return true if the call rate is within the desired limit
      */
     public boolean checkThrottle() {
-        synchronized (logLocker) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime periodAgo = now.minus(1, timeUnit);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime periodAgo = now.minus(1, timeUnit);
 
-            Set<LocalDateTime> newLog = log.stream()
-                                           .filter(ldt -> ldt.isAfter(periodAgo))
-                                           .collect(Collectors.toCollection(TreeSet::new));
-            log = newLog;
+        long numInPeriod = log.stream()
+                              .filter(ldt -> ldt.isAfter(periodAgo))
+                              .count();
 
-            if (newLog.size() < maxInPeriod) {
-                log.add(now);
-                return true;
-            }
-
-            return false;
+        if (numInPeriod < maxInPeriod) {
+            log.offer(now);
+            return true;
         }
+
+        return false;
     }
 }
