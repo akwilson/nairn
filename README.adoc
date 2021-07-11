@@ -1,0 +1,23 @@
+= Nairn -- Some Possibly Useful Java Utilities
+
+== Event Bus
+A publish / subscribe event bus.
+Subscribers can register an interest to a type of event.
+When a publisher publishes that type the subscriber is notified.
+There are two versions, single and multi-threaded.
+The single threaded version calls subscribers on the same thread as the publisher.
+The multi-threaded version calls subscribers on a thread pool.
+
+== Hashpool
+A collection of one thread thread-pools.
+A pool is selected based on a hash of an identifier passed in the the execute method.
+Useful when used in conjunction with the Event Bus -- subscribers for a given object will always run on the same thread.
+
+== Throttler
+Two `Consumer` implementations which throttle calls to the `accept()` method.
+Clients specify the desired throttle rate, e.g. five calls per second.
+`ThrottledConsumer` drops all calls made outside the throttle rate while `ThrottledBufferedConsumer` maintains a backlog that gets drained when the system is quiet.
+
+== Ring Buffer
+A circular FIFO array which overwrites older values as the array loops around.
+Should be thread-safe, but the iterator copies the whole array which could be costly.
