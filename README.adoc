@@ -21,3 +21,6 @@ Clients specify the desired throttle rate, e.g. five calls per second.
 == Ring Buffer
 A circular FIFO array which overwrites older values as the array loops around.
 Should be thread-safe, but the iterator copies the whole array which could be costly.
+
+== Cache
+An implementation of the scalable, thread-safe cache from Java Concurrency in Practice.
